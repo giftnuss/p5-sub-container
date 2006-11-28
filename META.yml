@@ -1,0 +1,15 @@
+---
+name: Chest
+version: 0.082
+author:
+  - 'Sebastian Knapp <sk@computer-leipzig.com>'
+abstract: Class to store procedures in a hash.
+license: perl
+provides:
+  Chest:
+    file: lib/Chest.pm
+    version: 0.082
+  Chest::Global:
+    file: lib/Chest/Global.pm
+    version: 0.031
+generated_by: Module::Build version 0.26
