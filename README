@@ -1,4 +1,7 @@
+Readme for module Chest
+-----------------------
 
+Simple module to store subroutines in a hash.
 
 At the very least you should be able to use this set of instructions
 to install the module...
@@ -7,5 +10,26 @@ perl Build.PL
 ./Build
 ./Build test
 ./Build install
+
+
+What is the advantage over a normal hash?
+
+Not much, only that it protects his core a little bit to contain
+other things than subroutines.
+
+You can subclass it and add special functions around a call.
+
+I hope it spares at least some typing, when you came to
+a point where you think, that a hash is good place for your 
+subroutines.
+
+Personally I use it to implement something like a global namespace
+where I can everything can be called from every point. Ok, the function
+that wraped the "take" method has to be imported before.
+
+So I did not think that is a dispatcher. It could be used for that,
+but 80% percent of the calls are constant.
+
+Disadvantages are the decrement of execution speed.
 
 

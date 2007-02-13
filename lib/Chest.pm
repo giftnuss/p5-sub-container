@@ -1,11 +1,7 @@
-
+  package Chest
 ; use strict
-; use warnings
 
-; package Chest
-; use Carp
-
-; our $VERSION='0.082'
+; our $VERSION='0.084'
 
 ; sub new
     { my ($class)=@_
@@ -15,13 +11,23 @@
 
 ; sub insert
     { my ($self,$key,$sub,@args)=@_
-    ; $self->{$key}=&$sub( @args )
-        unless $self->exists($key)
+    ; if( $self->exists($key) )
+        { $self->carp('KEY EXISTS <',$key)
+        ; return
+        }
+    ; $self->insert_always($key,$sub,@args)
     }
 
 ; sub insert_always
     { my ($self,$key,$sub,@args)=@_
-    ; $self->{$key}=&$sub( @args )
+    ; unless( ref $sub eq 'CODE' )
+        { $self->croak('ARG NO CODE REF',$key); return }
+    ; $sub = eval { &$sub( @args ) }
+    ; if( $@ )
+        { $self->croak('CREATION EXCP',$key,$@); return }
+    ; unless( ref $sub eq 'CODE' )
+        { $self->croak('NO CODE TO STORE',$key); return } 
+    ; $self->{$key}=$sub
     }
 
 ; sub exists
@@ -32,21 +38,93 @@
 ; sub take
     { my ($self,$key,@par)=@_
     ; unless( $self->exists($key) )
-        { carp "$key isn't in the chest."
+        { $self->carp("KEY NOT IN CHEST",$key)
         ; return 
         }			   
     ; &{$self->{$key}}(@par);
     }
+
+; sub coderef
+    { my ($self,$key)=@_
+    ; unless( $self->exists($key) )
+         { $self->carp("KEY NOT IN CHEST",$key)
+         ; return sub { undef }
+         }
+    ; $self->{$key}
+    }
     
+# immediate evaluation
+; sub curry
+    { my ($self,$old,$new,@args)=@_
+    ; my $code=$self->coderef($old)
+    ; $self->insert_always($new,sub{sub{&$code(@args,@_)}})
+    }
+
+# lazy evaluation
+; sub alias
+    { my ($self,$old,$new,@args)=@_
+    ; $self->insert_always($new,sub{sub{$self->take($old,@args,@_)}}
+    }
+
 ; sub show_chest
     { my $self=shift
     ; print STDERR "\n *** CHEST ***"
-	  ; foreach ( sort keys %{$self} )
+    ; foreach ( sort keys %{$self} )
         { print STDERR "\n$_" }
     ; print "\n"
     }
 
-; 1
+# This modul eats it's own potatos.
+; package Chest::Error
+; our @ISA=qw/Chest/
+; {
+    my $error=new Chest::Error
+  ; sub add
+      { my ($pkg,$key,$msg)=@_
+      ; $error->insert_always($key,mk_message($msg))
+      } 
+
+  ; sub mk_message
+      { my ($msg)=@_; sub{sub{sprintf($msg,@_)}} } 
+
+  ; sub error
+      { shift(); warn $_[0]; $error->take(@_) }
+ 
+  ; my %messages=
+
+  ( # WARNINGS
+    'KEY EXISTS <'  => "Key '%s' is already in the chest. Insert failed."
+  , 'KEY NOT EXISTS' => "Key '%s' is not in the chest."
+    # FATALS
+  , 'CREATION EXCP' => "Executing the coderef for key '%s' failed with error: %s"  
+  , 'ARG NO CODE REF' => "Argument for inserting '%s' was not a code ref."
+  , 'NO CODE TO STORE' => "There was no code ref to store for key '%s'"
+  )
+
+  ; add Chest::Error ($_,$messages{$_}) foreach keys %messages 
+
+  # avoid endless loops because typos in error keys and during startup.
+  ; sub carp  { croak(@_) }
+  ; sub croak { my ($s,$m,@a)=@_ 
+              ; require Carp
+              ; Carp::croak "Key '$m' is not in Chest::Error" 
+              }
+  }
+
+; package Chest
+; sub carp
+    { my ($self,$key,@args)=@_
+    ; require Carp
+    ; Carp::carp(Chest::Error->error($key,@args))
+    }
+
+; sub croak
+    { my ($self,$key,@args)=@_
+    ; require Carp
+    ; Carp::croak(Chest::Error->error($key,@args))
+    }
+
+; 'THE_NAME_IS_A_REFERENCE_TO_MIGHTIEST_CREATURE_ON_THE_DISCWORLD'
 
 __END__
 
@@ -78,21 +156,25 @@ cryptical ones.
 
 =head2 C<new>
 
-A simple Constructor for a hash based object.
+A simple Constructor without arguments for a hash based object.
 
 =head2 C<insert>
 
   ; $chest->insert("name",sub{my $a=$_[0];sub{$a}},"name")
 
-Important is the second method argument. It's used to be a valid code reference
-with another code reference as return value. This code ref is then stored under 
-the value from first argument. If an entry exists under this name, this method 
-does nothing. Additional arguments will be used when the second argument
-is executed.
+Important is the second method argument. It's used to be a valid 
+code reference with another code reference as return value. This 
+code ref is then stored under the value from first argument. 
+Additional arguments will be used when the second argument is 
+executed. If an entry exists under this name, this method does 
+nothing. Only a warning is printed via carp method.
 
 =head2 C<insert_always>
 
 Same as above but overwrites existing entries.
+Both insert functions return the inserted code ref on success.
+croak method is used to throw an exception if there were no
+usual code refs.
 
 =head2 C<exists>
 
@@ -102,14 +184,29 @@ Check if an an entry with a given name exists.
 
 Execute a stored subroutine with the given arguments.
 
+=head2 C<croak> and C<carp>
+
+Each method calls his pendant from L<Carp|Carp>. So subclasses
+can alternate error handling easy.
 
 =head1 SEE ALSO
 
-L<Callback>
+=over 3
+
+=item L<Callback>
+
+=item L<Class::Phrasebook|Class::Phrasebook>
+
+=item L<Data::Phrasebook|Data::Phrasebook> 
+
+=back 3
 
 =head1 TODO
 
-Getting feedback and correct all mistakes in code and documentation.
+Getting feedback and correct all mistakes in code and documentation
+is still a todo. 
+
+Documentation for carp and croak.
 
 =head1 AUTHOR
 
@@ -117,13 +214,10 @@ Sebastian Knapp
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 by Sebastian Knapp
+Copyright (C) 2006-2007 by Sebastian Knapp
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as perl itself.
 
 =cut
-
-
-
 
