@@ -197,7 +197,10 @@ can alternate error handling easy.
 
 =item L<Class::Phrasebook|Class::Phrasebook>
 
-=item L<Data::Phrasebook|Data::Phrasebook> 
+=item L<Data::Phrasebook|Data::Phrasebook>
+
+=item L<Dispatch::Declare|Dispatch::Declare> - This module uses 2 exported 
+functions to provide a similar functionality.
 
 =back 3
 
