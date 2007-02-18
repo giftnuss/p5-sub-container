@@ -1,21 +1,13 @@
   package Chest::Code
+# *******************
+; our $VERSION='0.01'
+# *******************
 ; use base 'Chest'
+; use strict
 
-; use strict; our $VERSION='0.01'
-
-; use constant CHEST => 0
-; use constant CODE  => 1
-
-; sub new
-    { my ($class)=@_
-    ; $class = ref $class if ref $class
-    ; bless [ new Chest(), {} ], $class
-    }
-    
-; sub exists
-    { my ($self,$key)=@_
-    ; $self->[CHEST]->exists($key) || CORE::exists($self->[CODE]->{$key})
-    }
+; sub CODEREF () { 0 }
+; sub CODESTR () { 1 }
+; sub CODEARG () { 2 }
     
 ; { my %messages=
 
@@ -28,31 +20,54 @@
     
 ; sub insert
     { my ($self,$key,$code,@args)=@_
-    ; return $self->[CHEST]->insert($key,$code,@args) if ref $code
-    
+    ; return $self->SUPER::insert($key,$code,@args) if ref $code
+    ; return if $self->carp_existence($key)
+    ; $self->{$key}->[CODESTR]=$code
+    }
 
 ; sub insert_always
     { my ($self,$key,$code,@args)=@_
-    ; return $self->[CHEST]->insert_always($key,$code,@args) if ref $code
+    ; return $self->SUPER::insert_always($key,$code,@args) if ref $code
+    ; $self->{$key}->[CODESTR]=$code
+    }
 
 ; sub insert_evaled
     { my ($self,$key,$code,@args)=@_
     ; $self->croak('NO STRING ARG',$key) if ref $code
-    ; if( $self->exists($key) )
-        { $self->carp('KEY EXISTS <',$key)
-	; return
-	}
+    ; return if $self->carp_existence($key)
     ; $self->insert_always_evaled($key,$code,@args)
     }
     
 ; sub insert_always_evaled
     { my ($self,$key,$code,@args)=@_
     ; $self->croak('NO STRING ARG',$key) if ref $code
+    ; $self->{$key}->[CODESTR]=$code
+    ; $self->SUPER::insert_always($key,eval "sub { $code }",@args)
+    }
     
+; sub codestring
+    { my ($self,$key)=@_
+    ; $self->{$key}->[CODESTR]
+    }
+
 ; sub take
     { my ($self,$key,@args)=@_
-    ; $self->{'chest'}->take($key,@args) if $self->{'chest'}->exists($key)
+    ; return &{$self->{$key}->[CODEREF]}(@args) if $self->{$key}->[CODEREF]
+    ; my $code = $self->codestring($key)
+    ; my $sub  = $self->SUPER::insert_always($key,eval "sub { $code }")
+    }
+    
+; 1
 
+__END__
     
-    
-    
+=head1 NAME
+
+Chest::Code - store the codestring with the subroutine
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+

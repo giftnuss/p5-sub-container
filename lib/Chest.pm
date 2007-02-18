@@ -3,18 +3,30 @@
 
 ; our $VERSION='0.084'
 
+# internal slot selection - this is the base module, 
+# only the first of unlimited slots is used.
+; sub CODEREF () { 0 }
+
 ; sub new
     { my ($class)=@_
     ; $class = ref $class if ref $class
     ; bless {} , $class
     }
+    
+# shortcut for existence checking
+; sub carp_existence
+    { my ($self,$key)=@_
+    ; if( $self->exists($key) )
+        { local $Carp::CarpLevel; $Carp::CarpLevel++
+        ; $self->carp('KEY EXISTS <',$key)
+        ; return 1
+        }
+    ; 0
+    }
 
 ; sub insert
     { my ($self,$key,$sub,@args)=@_
-    ; if( $self->exists($key) )
-        { $self->carp('KEY EXISTS <',$key)
-        ; return
-        }
+    ; return if $self->carp_existence($key)
     ; $self->insert_always($key,$sub,@args)
     }
 
@@ -27,7 +39,8 @@
         { $self->croak('CREATION EXCP',$key,$@); return }
     ; unless( ref $sub eq 'CODE' )
         { $self->croak('NO CODE TO STORE',$key); return } 
-    ; $self->{$key}=$sub
+    ; $self->{$key}=[ $sub ]
+    ; $sub
     }
 
 ; sub exists
@@ -41,7 +54,7 @@
         { $self->carp("KEY NOT IN CHEST",$key)
         ; return 
         }			   
-    ; &{$self->{$key}}(@par);
+    ; &{$self->{$key}->[CODEREF]}(@par);
     }
 
 ; sub coderef
@@ -50,7 +63,7 @@
          { $self->carp("KEY NOT IN CHEST",$key)
          ; return sub { undef }
          }
-    ; $self->{$key}
+    ; $self->{$key}->[CODEREF]
     }
     
 # immediate evaluation
@@ -63,7 +76,7 @@
 # lazy evaluation
 ; sub alias
     { my ($self,$old,$new,@args)=@_
-    ; $self->insert_always($new,sub{sub{$self->take($old,@args,@_)}}
+    ; $self->insert_always($new,sub{sub{$self->take($old,@args,@_)}})
     }
 
 ; sub show_chest
