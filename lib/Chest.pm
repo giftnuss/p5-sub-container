@@ -12,7 +12,7 @@
     ; $class = ref $class if ref $class
     ; bless {} , $class
     }
-    
+
 # shortcut for existence checking
 ; sub carp_existence
     { my ($self,$key)=@_
