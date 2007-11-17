@@ -23,13 +23,14 @@ I hope it spares at least some typing, when you came to
 a point where you think, that a hash is good place for your 
 subroutines.
 
-Personally I use it to implement something like a global namespace
-where I can everything can be called from every point. Ok, the function
+Personally I use it to implement something like a global namespace,
+so everything is called from everywhere. Ok, the function
 that wraped the "take" method has to be imported before.
 
 So I did not think that is a dispatcher. It could be used for that,
-but 80% percent of the calls are constant.
+but in that use case more than 80% percent of the calls are constant.
 
 Disadvantages are the decrement of execution speed.
+
 
 

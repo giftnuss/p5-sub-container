@@ -187,20 +187,25 @@ nothing. Only a warning is printed via carp method.
 Same as above but overwrites existing entries.
 Both insert functions return the inserted code ref on success.
 croak method is used to throw an exception if there were no
-usual code refs.
+usable code refs.
 
 =head2 C<exists>
 
-Check if an an entry with a given name exists.
+Checks existence of an entry with the given name.
 
 =head2 C<take>
 
 Execute a stored subroutine with the given arguments.
 
+=head2 C<coderef>
+
+Returns the code reference which is acceable by the 
+given name.
+
 =head2 C<croak> and C<carp>
 
 Each method calls his pendant from L<Carp|Carp>. So subclasses
-can alternate error handling easy.
+can alternate error handling.
 
 =head1 SEE ALSO
 
