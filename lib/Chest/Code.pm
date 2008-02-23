@@ -23,6 +23,8 @@
     ; return $self->SUPER::insert($key,$code,@args) if ref $code
     ; return if $self->carp_existence($key)
     ; $self->{$key}->[CODESTR]=$code
+    ; $self->{$key}->[CODEARG]=\@args
+    ; return sub { $self->take($key,@_) } if defined wantarray
     }
 
 ; sub insert_always
@@ -52,9 +54,12 @@
 
 ; sub take
     { my ($self,$key,@args)=@_
-    ; return &{$self->{$key}->[CODEREF]}(@args) if $self->{$key}->[CODEREF]
-    ; my $code = $self->codestring($key)
-    ; my $sub  = $self->SUPER::insert_always($key,eval "sub { $code }")
+    ; unless($self->{$key}->[CODEREF])
+        { my $code = $self->codestring($key)
+        ; my $sub  = $self->SUPER::insert_always
+            ( $key, eval("sub { $code }"), @{$self->{$key}->[CODEARG]} )
+        }
+    ;  return $self->{$key}->[CODEREF]->(@args)
     }
     
 ; 1

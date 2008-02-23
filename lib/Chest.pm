@@ -30,6 +30,10 @@
     ; $self->insert_always($key,$sub,@args)
     }
 
+# TODO
+# it is hard to return always the coderef in subclasses and the method
+# coderef exists now so return value should be changed to boolean or returning
+# the key maybe
 ; sub insert_always
     { my ($self,$key,$sub,@args)=@_
     ; unless( ref $sub eq 'CODE' )
